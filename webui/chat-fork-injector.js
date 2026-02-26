@@ -19,15 +19,14 @@
  */
 
 let observer = null;
-let injecting = false;
 
 export function setup() {
   const trySetup = () => {
     const container = document.querySelector("ul.chats-config-list");
     if (container) {
-      injectAll(container);
-      observer = new MutationObserver(() => injectAll(container));
-      observer.observe(container, { childList: true, subtree: true });
+      injectNew(container);
+      observer = new MutationObserver(() => injectNew(container));
+      observer.observe(container, { childList: true });
     } else {
       setTimeout(trySetup, 1000);
     }
@@ -35,57 +34,47 @@ export function setup() {
   trySetup();
 }
 
-function injectAll(container) {
-  if (injecting) return;
-  injecting = true;
+function injectNew(container) {
+  const chatsStore = window.Alpine?.store("chats");
+  if (!chatsStore?.contexts) return;
 
-  try {
-    const chatsStore = window.Alpine?.store("chats");
-    if (!chatsStore?.contexts) return;
+  const items = container.querySelectorAll("li");
+  items.forEach((li, index) => {
+    // Skip items that already have a fork button
+    if (li.querySelector(".lf-fork-btn")) return;
 
-    // Clean up stale buttons (contexts may have been reordered/removed)
-    container
-      .querySelectorAll(".lf-fork-btn")
-      .forEach((btn) => btn.remove());
+    const context = chatsStore.contexts[index];
+    if (!context) return;
 
-    const items = container.querySelectorAll("li");
-    items.forEach((li, index) => {
-      const context = chatsStore.contexts[index];
-      if (!context) return;
+    const chatContainer = li.querySelector(".chat-container");
+    if (!chatContainer) return;
 
-      const chatContainer = li.querySelector(".chat-container");
-      if (!chatContainer) return;
+    const closeBtn = chatContainer.querySelector(
+      'button.chat-list-action-btn[title="Close chat"]',
+    );
 
-      // Find the close button to insert before it
-      const closeBtn = chatContainer.querySelector(
-        'button.chat-list-action-btn[title="Close chat"]',
-      );
+    const btn = document.createElement("button");
+    btn.className = "btn-icon-action chat-list-action-btn lf-fork-btn";
+    btn.title = "Fork this chat";
 
-      const btn = document.createElement("button");
-      btn.className = "btn-icon-action chat-list-action-btn lf-fork-btn";
-      btn.title = "Fork this chat";
+    const icon = document.createElement("span");
+    icon.className = "material-symbols-outlined";
+    icon.textContent = "call_split";
+    icon.style.fontSize = "18px";
+    btn.appendChild(icon);
 
-      const icon = document.createElement("span");
-      icon.className = "material-symbols-outlined";
-      icon.textContent = "call_split";
-      icon.style.fontSize = "18px";
-      btn.appendChild(icon);
-
-      const contextId = context.id;
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        const forkStore = window.Alpine?.store("forkActions");
-        if (forkStore) forkStore.forkChat(contextId);
-      });
-
-      if (closeBtn) {
-        chatContainer.insertBefore(btn, closeBtn);
-      } else {
-        chatContainer.appendChild(btn);
-      }
+    const contextId = context.id;
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const forkStore = window.Alpine?.store("forkActions");
+      if (forkStore) forkStore.forkChat(contextId);
     });
-  } finally {
-    injecting = false;
-  }
+
+    if (closeBtn) {
+      chatContainer.insertBefore(btn, closeBtn);
+    } else {
+      chatContainer.appendChild(btn);
+    }
+  });
 }
