@@ -14,22 +14,22 @@ const model = {
   },
 
   /**
-   * Fork the currently selected chat context.
+   * Fork a specific chat context by ID.
    * Returns the new context ID on success, or null on failure.
    */
-  async forkCurrentChat() {
-    const chatsStore = getStore("chats");
-    if (!chatsStore || !chatsStore.selected) {
-      this.error = "No chat selected";
+  async forkChat(contextId) {
+    if (!contextId) {
+      this.error = "No chat to fork";
       return null;
     }
 
+    const chatsStore = getStore("chats");
     this.forking = true;
     this.error = "";
 
     try {
       const result = await callJsonApi(`${API}/chat_fork`, {
-        context_id: chatsStore.selected,
+        context_id: contextId,
       });
 
       if (!result.success) {
@@ -38,7 +38,7 @@ const model = {
       }
 
       // Refresh the chat list so the fork appears
-      if (chatsStore.loadContexts) {
+      if (chatsStore?.loadContexts) {
         await chatsStore.loadContexts();
       }
 
@@ -52,23 +52,36 @@ const model = {
   },
 
   /**
-   * Fork the current chat and immediately open split view to compare.
+   * Fork the currently selected chat context.
+   * Returns the new context ID on success, or null on failure.
    */
-  async forkAndCompare() {
+  async forkCurrentChat() {
     const chatsStore = getStore("chats");
     if (!chatsStore || !chatsStore.selected) {
+      this.error = "No chat selected";
+      return null;
+    }
+    return this.forkChat(chatsStore.selected);
+  },
+
+  /**
+   * Fork a specific chat and open split view to compare.
+   */
+  async forkAndCompare(contextId) {
+    const chatsStore = getStore("chats");
+    const targetId = contextId || chatsStore?.selected;
+    if (!targetId) {
       this.error = "No chat selected";
       return;
     }
 
-    const originalId = chatsStore.selected;
-    const newId = await this.forkCurrentChat();
+    const newId = await this.forkChat(targetId);
     if (!newId) return;
 
     // Open split view comparing original vs fork
     const splitView = getStore("splitView");
     if (splitView) {
-      splitView.openSplit(originalId, newId);
+      splitView.openSplit(targetId, newId);
     }
   },
 

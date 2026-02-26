@@ -47,11 +47,69 @@ const model = {
   init() {
     if (this._initialized) return;
     this._initialized = true;
-    // Check for pending trace request (set before modal opens)
+    // Check for pending trace request (legacy fallback)
     const pending = globalThis._pendingTrace;
     if (pending) {
       globalThis._pendingTrace = null;
       this.loadTrace(pending.id, pending.url);
+    }
+  },
+
+  /**
+   * Fetch the latest trace for a given context by reading its chat logs
+   * and extracting trace_id from the most recent log item's kvps.
+   */
+  async loadLatestTrace(contextId) {
+    if (!contextId) {
+      this.error = "No chat selected";
+      return;
+    }
+
+    this.loading = true;
+    this.error = "";
+    this.trace = null;
+    this.observations = [];
+    this.tree = null;
+    this.diagramSvg = "";
+    this.selectedObsId = null;
+
+    try {
+      const resp = await globalThis.fetchApi("/plugins/langfuse-observability/chat_logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ context_id: contextId, log_from: 0 }),
+      });
+      const data = await resp.json();
+
+      if (!data.success || !data.logs) {
+        this.error = "No logs found for this chat";
+        this.loading = false;
+        return;
+      }
+
+      // Find the most recent log item with a trace_id in kvps
+      let traceId = null;
+      let traceUrl = "";
+      for (let i = data.logs.length - 1; i >= 0; i--) {
+        const log = data.logs[i];
+        if (log.kvps && log.kvps.trace_id) {
+          traceId = log.kvps.trace_id;
+          traceUrl = log.kvps.trace_url || "";
+          break;
+        }
+      }
+
+      if (!traceId) {
+        this.error = "No trace found for this chat (tracing may not be enabled)";
+        this.loading = false;
+        return;
+      }
+
+      // Load the full trace from Langfuse
+      await this.loadTrace(traceId, traceUrl);
+    } catch (e) {
+      this.error = e.message || "Failed to find trace data";
+      this.loading = false;
     }
   },
 

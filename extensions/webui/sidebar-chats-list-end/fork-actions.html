@@ -7,49 +7,150 @@
 </head>
 
 <body>
-  <div x-data="{ compareTarget: '' }">
+  <div x-data="{
+    _observer: null,
+    _injectedItems: new WeakSet(),
+
+    init() {
+      this.$nextTick(() => this._setup());
+    },
+
+    _setup() {
+      // Find the chat list container by walking up from our extension point
+      const container = this._findChatList();
+      if (container) {
+        this._injectAll(container);
+        this._observer = new MutationObserver(() => this._injectAll(container));
+        this._observer.observe(container, { childList: true, subtree: true });
+      }
+    },
+
+    _findChatList() {
+      // The extension is rendered at sidebar-chats-list-end, which is inside
+      // or adjacent to the chat list container. Walk up to find it.
+      let el = this.$el;
+      for (let i = 0; i < 10 && el; i++) {
+        // Look for a container that has chat <li> children
+        const items = el.querySelectorAll('li');
+        if (items.length > 0) return el;
+        el = el.parentElement;
+      }
+      // Fallback: search the sidebar for any list with chat items
+      const sidebar = document.querySelector('.sidebar, [class*=sidebar], nav');
+      return sidebar || document.body;
+    },
+
+    _injectAll(container) {
+      const chatStore = Alpine.store('chats');
+      if (!chatStore?.list) return;
+      const chatList = chatStore.list;
+
+      // Find all <li> elements that look like chat items
+      const items = container.querySelectorAll('li');
+      let chatIndex = 0;
+
+      items.forEach((li) => {
+        // Skip items that are clearly not chat items (e.g., our own injected elements)
+        if (li.closest('[x-data]') === this.$el) return;
+        if (this._injectedItems.has(li)) return;
+
+        const chat = chatList[chatIndex];
+        if (!chat) return;
+        chatIndex++;
+
+        this._injectedItems.add(li);
+        this._injectButton(li, chat.id);
+      });
+    },
+
+    _injectButton(li, contextId) {
+      // Make the li a positioning context for the fork button
+      if (getComputedStyle(li).position === 'static') {
+        li.style.position = 'relative';
+      }
+
+      const btn = document.createElement('button');
+      btn.className = 'lf-fork-icon';
+      btn.title = 'Fork this chat';
+      btn.innerHTML = '<span class=\"material-symbols-outlined\">call_split</span>';
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        Alpine.store('forkActions').forkChat(contextId);
+      });
+      li.appendChild(btn);
+    },
+
+    destroy() {
+      if (this._observer) this._observer.disconnect();
+    }
+  }">
+    <!-- Fallback: selected-chat fork actions shown below chat list -->
     <template x-if="$store.forkActions && $store.chats?.selected">
-      <div class="fork-actions-container">
-        <div class="fork-actions-row">
-          <button class="fork-btn"
-            :disabled="$store.forkActions.forking"
-            @click="$store.forkActions.forkCurrentChat()"
-            title="Fork this chat to explore a different path">
-            <span class="material-symbols-outlined">call_split</span>
-            <span x-text="$store.forkActions.forking ? 'Forking...' : 'Fork Chat'"></span>
-          </button>
-          <button class="fork-btn"
-            :disabled="$store.forkActions.forking"
-            @click="$store.forkActions.forkAndCompare()"
-            title="Fork and open split comparison">
-            <span class="material-symbols-outlined">compare</span>
-            <span>Fork &amp; Compare</span>
-          </button>
-        </div>
+      <div class="fork-actions-selected">
+        <button class="fork-btn"
+          :disabled="$store.forkActions.forking"
+          @click="$store.forkActions.forkAndCompare()"
+          title="Fork selected chat and open side-by-side comparison">
+          <span class="material-symbols-outlined">compare</span>
+          <span>Fork &amp; Compare</span>
+        </button>
         <template x-if="$store.forkActions.error">
           <div class="fork-error" x-text="$store.forkActions.error"></div>
         </template>
       </div>
     </template>
-
-    <!-- Split view overlay (position:fixed, renders on top of everything) -->
-    <x-component path="/usr/plugins/langfuse-observability/webui/split-view.html"></x-component>
   </div>
 
+  <!-- Split view overlay (position:fixed, renders on top of everything) -->
+  <x-component path="/usr/plugins/langfuse-observability/webui/split-view.html"></x-component>
+
   <style>
-    .fork-actions-container {
-      padding: 0.5rem 0;
+    /* Per-chat fork icon - appears on hover */
+    .lf-fork-icon {
+      position: absolute;
+      right: 24px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: none;
+      border-radius: 3px;
+      background: transparent;
+      color: var(--color-text, #ccc);
+      cursor: pointer;
+      opacity: 0.5;
+      transition: all 0.15s ease;
+      z-index: 2;
+    }
+
+    .lf-fork-icon .material-symbols-outlined {
+      font-size: 15px;
+    }
+
+    /* Show on hover of the chat list item */
+    li:hover > .lf-fork-icon {
+      display: flex;
+    }
+
+    .lf-fork-icon:hover {
+      opacity: 1;
+      background: var(--color-background-hover, rgba(255,255,255,0.1));
+    }
+
+    /* Bottom fork actions for Compare */
+    .fork-actions-selected {
+      padding: 0.4rem 0;
       border-top: 1px solid var(--color-border);
       margin-top: 0.25rem;
     }
 
-    .fork-actions-row {
-      display: flex;
-      gap: 0.25rem;
-    }
-
     .fork-btn {
-      flex: 1;
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
