@@ -2,8 +2,8 @@ import json
 import os
 
 import models
-from python.helpers.api import ApiHandler, Input, Output, Request, Response
-from python.helpers import files, settings
+from helpers.api import ApiHandler, Input, Output, Request, Response
+from helpers import files, settings
 
 _PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

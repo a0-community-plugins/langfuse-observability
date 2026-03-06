@@ -36,7 +36,7 @@ def _ensure_langfuse_installed():
 
 def get_langfuse_config() -> dict[str, Any]:
     """Get Langfuse configuration with plugin config > env var > default precedence."""
-    from python.helpers.plugins import get_plugin_config
+    from helpers.plugins import get_plugin_config
 
     config = get_plugin_config("langfuse-observability", None) or {}
     public_key = config.get("langfuse_public_key") or os.getenv("LANGFUSE_PUBLIC_KEY", "")

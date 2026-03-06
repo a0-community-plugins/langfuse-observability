@@ -3,10 +3,10 @@ import sys
 
 _PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _PLUGIN_ROOT not in sys.path:
-    sys.path.insert(0, _PLUGIN_ROOT)
+    sys.path.append(_PLUGIN_ROOT)
 
-from python.helpers.api import ApiHandler, Request, Response
-from helpers.langfuse_helper import get_langfuse_client
+from helpers.api import ApiHandler, Request, Response
+from langfuse_helpers.langfuse_helper import get_langfuse_client
 
 
 class LangfuseTrace(ApiHandler):
@@ -21,7 +21,10 @@ class LangfuseTrace(ApiHandler):
             return {"success": False, "error": "Langfuse is not configured"}
 
         try:
-            trace = client.api.trace.get(trace_id)
+            trace = client.api.trace.get(
+                trace_id,
+                request_options={"timeout_in_seconds": 30},
+            )
         except Exception as e:
             return {"success": False, "error": f"Failed to fetch trace: {e}"}
 
@@ -82,7 +85,7 @@ class LangfuseTrace(ApiHandler):
         }
 
 
-def _truncate(value, max_len=10000):
+def _truncate(value, max_len=100000):
     if value is None:
         return None
     s = str(value)

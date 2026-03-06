@@ -1,5 +1,5 @@
 from agent import AgentContext
-from python.helpers.api import ApiHandler, Input, Output, Request, Response
+from helpers.api import ApiHandler, Input, Output, Request, Response
 
 
 class ChatLogs(ApiHandler):
@@ -20,7 +20,7 @@ class ChatLogs(ApiHandler):
         if not context:
             return {"success": False, "error": "Context not found"}
 
-        logs = context.log.output(start=log_from)
+        log_output = context.log.output(start=log_from)
         log_version = len(context.log.updates)
 
         # Include fork_info if present
@@ -30,8 +30,10 @@ class ChatLogs(ApiHandler):
 
         return {
             "success": True,
-            "logs": logs,
+            "logs": log_output.items,
             "log_version": log_version,
             "log_guid": context.log.guid,
+            "log_start": log_output.start,
+            "log_end": log_output.end,
             "fork_info": fork_info,
         }

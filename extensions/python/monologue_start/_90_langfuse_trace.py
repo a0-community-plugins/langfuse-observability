@@ -3,10 +3,10 @@ import sys
 
 _PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 if _PLUGIN_ROOT not in sys.path:
-    sys.path.insert(0, _PLUGIN_ROOT)
+    sys.path.append(_PLUGIN_ROOT)
 
-from python.helpers.extension import Extension
-from helpers.langfuse_helper import get_langfuse_client, should_sample
+from helpers.extension import Extension
+from langfuse_helpers.langfuse_helper import get_langfuse_client, should_sample
 from agent import LoopData, Agent
 
 
@@ -49,7 +49,7 @@ class LangfuseTraceStart(Extension):
         # Top-level agent: create a root span (v3 creates trace implicitly)
         user_msg = ""
         if loop_data.user_message:
-            user_msg = str(loop_data.user_message.content)[:500]
+            user_msg = str(loop_data.user_message.content)
 
         root_span = client.start_span(
             name=f"agent-{agent.number}-monologue",

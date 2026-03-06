@@ -13,7 +13,7 @@ from typing import Any
 from agent import AgentContext
 
 # Fragile imports from core — these are private functions
-from python.helpers.persist_chat import (
+from helpers.persist_chat import (
     _serialize_context,
     _deserialize_context,
     _safe_json_serialize,

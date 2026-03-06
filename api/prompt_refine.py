@@ -1,8 +1,8 @@
 import json
 import os
 
-from python.helpers.api import ApiHandler, Input, Output, Request, Response
-from python.helpers import files, settings
+from helpers.api import ApiHandler, Input, Output, Request, Response
+from helpers import files, settings
 import models
 from models import ModelConfig, ModelType
 

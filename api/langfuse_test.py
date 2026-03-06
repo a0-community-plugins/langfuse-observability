@@ -3,10 +3,10 @@ import sys
 
 _PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _PLUGIN_ROOT not in sys.path:
-    sys.path.insert(0, _PLUGIN_ROOT)
+    sys.path.append(_PLUGIN_ROOT)
 
-from python.helpers.api import ApiHandler, Request, Response
-from python.helpers.plugins import get_plugin_config
+from helpers.api import ApiHandler, Request, Response
+from helpers.plugins import get_plugin_config
 
 
 # Matches the core PASSWORD_PLACEHOLDER pattern
@@ -29,7 +29,7 @@ class LangfuseTest(ApiHandler):
             return {"success": False, "error": "Public key and secret key are required"}
 
         try:
-            from helpers.langfuse_helper import _ensure_langfuse_installed
+            from langfuse_helpers.langfuse_helper import _ensure_langfuse_installed
             _ensure_langfuse_installed()
             from langfuse import Langfuse
 

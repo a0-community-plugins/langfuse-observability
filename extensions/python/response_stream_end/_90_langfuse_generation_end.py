@@ -1,5 +1,5 @@
-from python.helpers.extension import Extension
-from python.helpers.tokens import approximate_tokens
+from helpers.extension import Extension
+from helpers.tokens import approximate_tokens
 from agent import LoopData
 
 
@@ -14,18 +14,17 @@ class LangfuseGenerationEnd(Extension):
             return
 
         response_text = loop_data.last_response or ""
+        input_tokens = loop_data.params_temporary.get("lf_input_tokens", 0)
         output_tokens = approximate_tokens(response_text) if response_text else 0
-        input_tokens = loop_data.params_temporary.get("lf_generation_input_tokens", 0)
 
         try:
-            generation.update(
-                output=response_text[:2000],
-                usage_details={
-                    "input": input_tokens,
-                    "output": output_tokens,
-                    "total": input_tokens + output_tokens,
-                },
-            )
+            update_kwargs = {"output": response_text}
+            if input_tokens or output_tokens:
+                update_kwargs["usage_details"] = {
+                    "input": int(input_tokens),
+                    "output": int(output_tokens),
+                }
+            generation.update(**update_kwargs)
             generation.end()
         except Exception:
             pass

@@ -3,10 +3,10 @@ import sys
 
 _PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _PLUGIN_ROOT not in sys.path:
-    sys.path.insert(0, _PLUGIN_ROOT)
+    sys.path.append(_PLUGIN_ROOT)
 
-from python.helpers.api import ApiHandler, Input, Output, Request, Response
-from helpers.fork_helper import fork_context
+from helpers.api import ApiHandler, Input, Output, Request, Response
+from langfuse_helpers.fork_helper import fork_context
 from agent import AgentContext
 
 
@@ -32,7 +32,7 @@ class ChatFork(ApiHandler):
             return {"success": False, "error": f"Fork failed: {e}"}
 
         # Notify other tabs about the new context
-        from python.helpers.state_monitor_integration import mark_dirty_all
+        from helpers.state_monitor_integration import mark_dirty_all
         mark_dirty_all(reason="api.chat_fork.ChatFork")
 
         return {
