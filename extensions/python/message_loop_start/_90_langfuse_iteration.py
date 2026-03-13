@@ -1,4 +1,4 @@
-from helpers.extension import Extension
+from extensions import Extension
 from agent import LoopData
 
 
@@ -12,8 +12,9 @@ class LangfuseIterationStart(Extension):
         if not trace:
             return
 
-        span = trace.start_span(
+        span = trace.start_observation(
             name=f"iteration-{loop_data.iteration}",
+            as_type="span",
             metadata={"iteration": loop_data.iteration},
         )
         loop_data.params_temporary["lf_iteration_span"] = span

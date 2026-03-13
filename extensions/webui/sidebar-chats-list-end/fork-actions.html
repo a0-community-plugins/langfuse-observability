@@ -1,9 +1,9 @@
 <html>
 <head>
   <script type="module">
-    import { store as forkStore } from "/usr/plugins/langfuse-observability/webui/fork-store.js";
-    import { store as splitStore } from "/usr/plugins/langfuse-observability/webui/split-view-store.js";
-    import { setup as setupForkInjector } from "/usr/plugins/langfuse-observability/webui/chat-fork-injector.js";
+    import { store as forkStore } from "/usr/plugins/a0_community_plugins__langfuse_observability/webui/fork-store.js";
+    import { store as splitStore } from "/usr/plugins/a0_community_plugins__langfuse_observability/webui/split-view-store.js";
+    import { setup as setupForkInjector } from "/usr/plugins/a0_community_plugins__langfuse_observability/webui/chat-fork-injector.js";
 
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", setupForkInjector);
@@ -27,7 +27,7 @@
 <body>
   <div x-data>
     <!-- Split view overlay (position:fixed, renders on top of everything) -->
-    <x-component path="/usr/plugins/langfuse-observability/webui/split-view.html"></x-component>
+    <x-component path="/usr/plugins/a0_community_plugins__langfuse_observability/webui/split-view.html"></x-component>
   </div>
 </body>
 </html>

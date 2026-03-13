@@ -4,7 +4,7 @@
 </head>
 <body>
     <div x-data>
-        <template x-if="$store.pluginSettings.settings">
+        <template x-if="config">
             <div>
                 <div class="section">
                     <div class="section-title">Langfuse</div>
@@ -22,7 +22,7 @@
                         <div class="field-control">
                             <label class="toggle">
                                 <input type="checkbox"
-                                       x-model="$store.pluginSettings.settings.langfuse_enabled" />
+                                       x-model="config.langfuse_enabled" />
                                 <span class="toggler"></span>
                             </label>
                         </div>
@@ -35,7 +35,7 @@
                         </div>
                         <div class="field-control">
                             <input type="text"
-                                   x-model="$store.pluginSettings.settings.langfuse_public_key"
+                                   x-model="config.langfuse_public_key"
                                    placeholder="pk-lf-..."
                                    autocomplete="off" />
                         </div>
@@ -48,7 +48,7 @@
                         </div>
                         <div class="field-control">
                             <input type="password"
-                                   x-model="$store.pluginSettings.settings.langfuse_secret_key"
+                                   x-model="config.langfuse_secret_key"
                                    placeholder="sk-lf-..."
                                    autocomplete="off" />
                         </div>
@@ -61,8 +61,8 @@
                         </div>
                         <div class="field-control">
                             <input type="text"
-                                   x-model="$store.pluginSettings.settings.langfuse_host"
-                                   placeholder="https://cloud.langfuse.com"
+                                   x-model="config.langfuse_host"
+                                   placeholder="https://us.cloud.langfuse.com"
                                    autocomplete="off" />
                         </div>
                     </div>
@@ -74,9 +74,9 @@
                         </div>
                         <div class="field-control">
                             <input type="range" min="0" max="1" step="0.1"
-                                   x-model.number="$store.pluginSettings.settings.langfuse_sample_rate" />
+                                   x-model.number="config.langfuse_sample_rate" />
                             <span class="range-value"
-                                  x-text="$store.pluginSettings.settings.langfuse_sample_rate"></span>
+                                  x-text="config.langfuse_sample_rate"></span>
                         </div>
                     </div>
 
@@ -98,13 +98,13 @@
                                     @click="
                                         testing = true;
                                         result = null;
-                                        globalThis.fetchApi('/plugins/langfuse-observability/langfuse_test', {
+                                        globalThis.fetchApi('/plugins/a0_community_plugins__langfuse_observability/langfuse_test', {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
                                             body: JSON.stringify({
-                                                public_key: $store.pluginSettings.settings.langfuse_public_key,
-                                                secret_key: $store.pluginSettings.settings.langfuse_secret_key,
-                                                host: $store.pluginSettings.settings.langfuse_host
+                                                public_key: config.langfuse_public_key,
+                                                secret_key: config.langfuse_secret_key,
+                                                host: config.langfuse_host
                                             })
                                         })
                                         .then(r => r.json())

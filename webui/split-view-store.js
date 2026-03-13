@@ -2,25 +2,31 @@ import { createStore } from "/js/AlpineStore.js";
 import { callJsonApi } from "/js/api.js";
 
 // Plugin API prefix
-const API = "/plugins/langfuse-observability";
+const API = "/plugins/a0_community_plugins__langfuse_observability";
 const POLL_INTERVAL_MS = 2000;
+
+/**
+ * @typedef {{ no: number, type: string, content?: string, agentno?: number | null }} ChatLog
+ * @typedef {{ fork_point?: number | null }} ForkInfo
+ * @typedef {{ success: boolean, logs: ChatLog[], log_version: number, log_guid: string, fork_info?: ForkInfo | null, error?: string }} ChatLogsResult
+ */
 
 const model = {
   active: false,
   leftContextId: "",
   rightContextId: "",
-  forkPoint: null, // log no where the fork happened
+  forkPoint: /** @type {number | null} */ (null), // log no where the fork happened
 
-  leftMessages: [],
-  rightMessages: [],
-  leftForkInfo: null,
-  rightForkInfo: null,
+  leftMessages: /** @type {ChatLog[]} */ ([]),
+  rightMessages: /** @type {ChatLog[]} */ ([]),
+  leftForkInfo: /** @type {ForkInfo | null} */ (null),
+  rightForkInfo: /** @type {ForkInfo | null} */ (null),
 
   loading: false,
   error: "",
 
   _initialized: false,
-  _pollTimer: null,
+  _pollTimer: /** @type {ReturnType<typeof setInterval> | null} */ (null),
   _leftLogVersion: 0,
   _rightLogVersion: 0,
   _leftLogGuid: "",
@@ -104,10 +110,15 @@ const model = {
         this._detectForkPoint();
       }
     } catch (e) {
-      this.error = e.message || "Failed to fetch logs";
+      this.error = e instanceof Error ? e.message : "Failed to fetch logs";
     }
   },
 
+  /**
+   * @param {string} contextId
+   * @param {number} logFrom
+   * @returns {Promise<ChatLogsResult | null>}
+   */
   async _fetchLogs(contextId, logFrom) {
     if (!contextId) return null;
     try {
@@ -126,6 +137,10 @@ const model = {
     }
   },
 
+  /**
+   * @param {"left" | "right"} side
+   * @param {ChatLog[] | undefined} logs
+   */
   _appendMessages(side, logs) {
     if (!logs || !logs.length) return;
     const existing = side === "left" ? this.leftMessages : this.rightMessages;

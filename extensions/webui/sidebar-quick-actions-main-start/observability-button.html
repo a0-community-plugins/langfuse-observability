@@ -1,8 +1,8 @@
 <html>
 <head>
   <script type="module">
-    import { store as traceStore } from "/usr/plugins/langfuse-observability/webui/trace-viewer-store.js";
-    import { setup as setupMessageTrace } from "/usr/plugins/langfuse-observability/webui/message-trace-injector.js";
+    import { store as traceStore } from "/usr/plugins/a0_community_plugins__langfuse_observability/webui/trace-viewer-store.js";
+    import { setup as setupMessageTrace } from "/usr/plugins/a0_community_plugins__langfuse_observability/webui/message-trace-injector.js";
 
     // Inject trace buttons into message action areas once DOM is ready
     if (document.readyState === "loading") {
@@ -36,7 +36,7 @@
       if (contextId) {
         $store.traceViewer.loadLatestTrace(contextId);
       }
-      openModal('/usr/plugins/langfuse-observability/webui/trace-viewer.html');
+      openModal('/usr/plugins/a0_community_plugins__langfuse_observability/webui/trace-viewer.html');
     }
   }">
     <template x-if="$store.traceViewer">

@@ -1,8 +1,15 @@
 import { createStore } from "/js/AlpineStore.js";
-import { sendJsonData, justToast, toast, toastFetchError } from "/index.js";
+import { callJsonApi } from "/js/api.js";
 
 // Plugin API prefix
-const API = "/plugins/langfuse-observability";
+const API = "/plugins/a0_community_plugins__langfuse_observability";
+const closeModal = /** @type {(modalPath?: string | null) => Promise<unknown> | unknown} */ (
+  globalThis.closeModal
+);
+
+/**
+ * @typedef {{ prompt?: string, [key: string]: unknown }} PromptVariant
+ */
 
 const model = {
   // Original prompt data (read-only, from trace observation)
@@ -15,21 +22,21 @@ const model = {
 
   // Editor state
   editorPrompt: "",
-  undoStack: [],
+  undoStack: /** @type {string[]} */ ([]),
 
   // Refiner/Judge state
   refining: false,
   judging: false,
-  variants: [],
+  variants: /** @type {PromptVariant[]} */ ([]),
 
   // Test state
   testing: false,
   testResult: "",
-  testForkedContextId: null,
+  testForkedContextId: /** @type {string | null} */ (null),
 
   // Source context for forking
   sourceContextId: "",
-  forkAtLogNo: null,
+  forkAtLogNo: /** @type {number | null} */ (null),
 
   _initialized: false,
 
@@ -76,7 +83,8 @@ const model = {
 
   undo() {
     if (this.undoStack.length === 0) return;
-    this.editorPrompt = this.undoStack.pop();
+    const previous = this.undoStack.pop();
+    if (typeof previous === "string") this.editorPrompt = previous;
   },
 
   resetEditor() {
@@ -91,7 +99,7 @@ const model = {
     this.variants = [];
 
     try {
-      const refineResult = await sendJsonData(`${API}/prompt_refine`, {
+      const refineResult = await callJsonApi(`${API}/prompt_refine`, {
         system_prompt: this.editorPrompt,
         user_message: this.userMessage,
         response: this.originalResponse,
@@ -100,14 +108,14 @@ const model = {
       });
 
       if (!refineResult.success) {
-        toast(refineResult.error || "Refiner failed", "error");
+        globalThis.toast(refineResult.error || "Refiner failed", "error");
         this.refining = false;
         return;
       }
 
       const rawVariants = refineResult.variants || [];
       if (rawVariants.length === 0) {
-        justToast("No improvements suggested", "info", 2000, "prompt-lab");
+        globalThis.justToast("No improvements suggested", "info", 2000, "prompt-lab");
         this.refining = false;
         return;
       }
@@ -115,7 +123,7 @@ const model = {
       this.refining = false;
       this.judging = true;
 
-      const judgeResult = await sendJsonData(`${API}/prompt_judge`, {
+      const judgeResult = await callJsonApi(`${API}/prompt_judge`, {
         original_prompt: this.originalPrompt,
         original_response: this.originalResponse,
         variants: rawVariants,
@@ -148,7 +156,7 @@ const model = {
     } catch (e) {
       this.refining = false;
       this.judging = false;
-      toastFetchError("Prompt improvement failed", e);
+      globalThis.toastFetchError("Prompt improvement failed", e);
     }
   },
 
@@ -158,15 +166,16 @@ const model = {
     this.testResult = "";
 
     try {
+      /** @type {{ context_id: string, fork_at_log_no?: number }} */
       const payload = { context_id: this.sourceContextId };
       if (this.forkAtLogNo != null) {
         payload.fork_at_log_no = this.forkAtLogNo;
       }
 
-      const result = await sendJsonData(`${API}/chat_fork`, payload);
+      const result = await callJsonApi(`${API}/chat_fork`, payload);
 
       if (!result.success) {
-        toast(result.error || "Test fork failed", "error");
+        globalThis.toast(result.error || "Test fork failed", "error");
         this.testing = false;
         return;
       }
@@ -174,34 +183,38 @@ const model = {
       this.testForkedContextId = result.context_id;
       this.testResult = `Forked to "${result.name}". Switch to the forked chat to continue with the modified prompt.`;
       this.testing = false;
-      justToast("Test fork created", "success", 2000, "prompt-lab");
+      globalThis.justToast("Test fork created", "success", 2000, "prompt-lab");
     } catch (e) {
       this.testing = false;
-      toastFetchError("Test failed", e);
+      globalThis.toastFetchError("Test failed", e);
     }
   },
 
   goToTestFork() {
     if (!this.testForkedContextId) return;
-    const chatsStore = window.Alpine?.store("chats");
+    const chatsStore = globalThis.Alpine?.store("chats");
     if (chatsStore) {
       chatsStore.selectChat(this.testForkedContextId);
     }
-    window.closeModal("/usr/plugins/langfuse-observability/webui/prompt-lab.html");
+    closeModal(
+      "/usr/plugins/a0_community_plugins__langfuse_observability/webui/prompt-lab.html",
+    );
   },
 
   compareInSplitView() {
     if (!this.testForkedContextId || !this.sourceContextId) {
-      justToast("Fork a test chat first", "info", 2000, "prompt-lab");
+      globalThis.justToast("Fork a test chat first", "info", 2000, "prompt-lab");
       return;
     }
-    const splitView = window.Alpine?.store("splitView");
+    const splitView = globalThis.Alpine?.store("splitView");
     if (!splitView) {
-      justToast("Split view not available", "error", 2000, "prompt-lab");
+      globalThis.justToast("Split view not available", "error", 2000, "prompt-lab");
       return;
     }
     // Close the prompt lab modal, then open split view
-    window.closeModal("/usr/plugins/langfuse-observability/webui/prompt-lab.html");
+    closeModal(
+      "/usr/plugins/a0_community_plugins__langfuse_observability/webui/prompt-lab.html",
+    );
     splitView.openSplit(
       this.sourceContextId,
       this.testForkedContextId,

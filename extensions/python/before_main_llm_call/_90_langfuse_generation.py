@@ -1,6 +1,6 @@
 import json
 
-from helpers.extension import Extension
+from extensions import Extension
 from agent import Agent, LoopData
 
 
@@ -69,8 +69,9 @@ class LangfuseGenerationStart(Extension):
         if isinstance(ctx_window, dict):
             input_tokens = int(ctx_window.get("tokens", 0))
 
-        generation = parent.start_generation(
+        generation = parent.start_observation(
             name="main-llm",
+            as_type="generation",
             model=model_name,
             input=prompt_text or None,
             metadata={

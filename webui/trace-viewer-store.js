@@ -1,4 +1,6 @@
 import { createStore } from "/js/AlpineStore.js";
+// Pre-register the promptLab store so it exists before openPromptLab is first called
+import "/usr/plugins/a0_community_plugins__langfuse_observability/webui/prompt-lab-store.js";
 
 let mermaidLoaded = false;
 let mermaidModule = null;
@@ -36,6 +38,7 @@ const model = {
   error: "",
   traceId: "",
   traceUrl: "",
+  contextId: "",
   trace: null,
   observations: [],
   tree: null,
@@ -58,23 +61,28 @@ const model = {
   /**
    * Fetch the latest trace for a given context by reading its chat logs
    * and extracting trace_id from the most recent log item's kvps.
+   * Retries up to 3 times (2s apart) so the viewer works even when opened
+   * before the response_stream_end extension has attached the trace_id.
    */
-  async loadLatestTrace(contextId) {
+  async loadLatestTrace(contextId, _attempt = 0) {
     if (!contextId) {
       this.error = "No chat selected";
       return;
     }
 
-    this.loading = true;
-    this.error = "";
-    this.trace = null;
-    this.observations = [];
-    this.tree = null;
-    this.diagramSvg = "";
-    this.selectedObsId = null;
+    if (_attempt === 0) {
+      this.contextId = contextId;
+      this.loading = true;
+      this.error = "";
+      this.trace = null;
+      this.observations = [];
+      this.tree = null;
+      this.diagramSvg = "";
+      this.selectedObsId = null;
+    }
 
     try {
-      const resp = await globalThis.fetchApi("/plugins/langfuse-observability/chat_logs", {
+      const resp = await globalThis.fetchApi("/plugins/a0_community_plugins__langfuse_observability/chat_logs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ context_id: contextId, log_from: 0 }),
@@ -100,6 +108,14 @@ const model = {
       }
 
       if (!traceId) {
+        // Trace not attached yet — retry a few times before giving up
+        if (_attempt < 3 && this.contextId === contextId) {
+          await new Promise((r) => setTimeout(r, 2000));
+          if (this.contextId === contextId) {
+            return this.loadLatestTrace(contextId, _attempt + 1);
+          }
+          return;
+        }
         this.error = "No trace found for this chat (tracing may not be enabled)";
         this.loading = false;
         return;
@@ -110,6 +126,15 @@ const model = {
     } catch (e) {
       this.error = e.message || "Failed to find trace data";
       this.loading = false;
+    }
+  },
+
+  /** Re-run the last load — used by the Retry button in the trace viewer. */
+  async refreshTrace() {
+    if (this.contextId) {
+      await this.loadLatestTrace(this.contextId);
+    } else if (this.traceId) {
+      await this.loadTrace(this.traceId, this.traceUrl);
     }
   },
 
@@ -125,7 +150,7 @@ const model = {
     this.selectedObsId = null;
 
     try {
-      const resp = await globalThis.fetchApi("/plugins/langfuse-observability/langfuse_trace", {
+      const resp = await globalThis.fetchApi("/plugins/a0_community_plugins__langfuse_observability/langfuse_trace", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ trace_id: traceId }),
@@ -230,7 +255,7 @@ const model = {
       });
     }
 
-    globalThis.openModal("/usr/plugins/langfuse-observability/webui/prompt-lab.html");
+    globalThis.openModal("/usr/plugins/a0_community_plugins__langfuse_observability/webui/prompt-lab.html");
   },
 
   getObservation(obsId) {
@@ -261,6 +286,7 @@ const model = {
     this.error = "";
     this.traceId = "";
     this.traceUrl = "";
+    this.contextId = "";
     this.selectedObsId = null;
   },
 

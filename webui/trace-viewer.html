@@ -2,7 +2,7 @@
 <head>
     <title>Trace Viewer</title>
     <script type="module">
-        import { store } from "/usr/plugins/langfuse-observability/webui/trace-viewer-store.js";
+        import { store } from "/usr/plugins/a0_community_plugins__langfuse_observability/webui/trace-viewer-store.js";
     </script>
 </head>
 <body>
@@ -18,9 +18,15 @@
                 </div>
 
                 <!-- Error -->
-                <div x-show="$store.traceViewer.error" class="trace-error">
+                <div x-show="$store.traceViewer.error && !$store.traceViewer.loading" class="trace-error">
                     <span class="material-symbols-outlined">error</span>
                     <span x-text="$store.traceViewer.error"></span>
+                    <button class="action-button" style="margin-left:8px"
+                            @click="$store.traceViewer.refreshTrace()"
+                            title="Retry">
+                        <span class="material-symbols-outlined" style="font-size:16px">refresh</span>
+                        Retry
+                    </button>
                 </div>
 
                 <!-- Content -->

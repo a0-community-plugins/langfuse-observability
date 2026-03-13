@@ -1,4 +1,4 @@
-from helpers.extension import Extension
+from extensions import Extension
 
 
 class LangfuseToolSpanStart(Extension):
@@ -19,8 +19,9 @@ class LangfuseToolSpanStart(Extension):
             val_str = str(v)
             args_summary[k] = val_str[:500] if len(val_str) > 500 else val_str
 
-        span = parent.start_span(
+        span = parent.start_observation(
             name=f"tool-{tool_name}" if tool_name else "tool-unknown",
+            as_type="span",
             input=args_summary,
             metadata={"tool_name": tool_name},
         )

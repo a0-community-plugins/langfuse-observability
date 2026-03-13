@@ -5,9 +5,10 @@ _PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(o
 if _PLUGIN_ROOT not in sys.path:
     sys.path.append(_PLUGIN_ROOT)
 
-from helpers.extension import Extension
+from extensions import Extension
 from langfuse_helpers.langfuse_helper import get_langfuse_client, should_sample
-from agent import LoopData, Agent
+from langfuse import LangfuseOtelSpanAttributes
+from agents import Agent, LoopData
 
 
 class LangfuseTraceStart(Extension):
@@ -35,8 +36,9 @@ class LangfuseTraceStart(Extension):
                 parent_span = superior.loop_data.params_persistent.get("lf_trace")
 
             if parent_span:
-                span = parent_span.start_span(
+                span = parent_span.start_observation(
                     name=f"agent-{agent.number}-monologue",
+                    as_type="span",
                     metadata={"agent_number": agent.number},
                 )
                 loop_data.params_persistent["lf_trace"] = span
@@ -46,21 +48,22 @@ class LangfuseTraceStart(Extension):
                 )
                 return
 
-        # Top-level agent: create a root span (v3 creates trace implicitly)
+        # Top-level agent: create a root observation (becomes a new trace in v4)
         user_msg = ""
         if loop_data.user_message:
             user_msg = str(loop_data.user_message.content)
 
-        root_span = client.start_span(
+        root_span = client.start_observation(
             name=f"agent-{agent.number}-monologue",
+            as_type="span",
             input=user_msg,
             metadata={"agent_number": agent.number},
         )
-        # Set trace-level metadata (session_id, etc.)
-        root_span.update_trace(
-            session_id=context_id,
-            metadata={"agent_number": agent.number},
-        )
+        # Set trace-level session_id via the underlying OTel span attribute
+        if hasattr(root_span, "_otel_span"):
+            root_span._otel_span.set_attribute(
+                LangfuseOtelSpanAttributes.TRACE_SESSION_ID, context_id
+            )
         loop_data.params_persistent["lf_trace"] = root_span
         loop_data.params_persistent["lf_root_trace"] = root_span
         loop_data.params_persistent["lf_trace_id"] = root_span.trace_id

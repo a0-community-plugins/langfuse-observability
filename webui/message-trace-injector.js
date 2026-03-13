@@ -5,7 +5,7 @@
  * the nearest trace_id in kvps.
  */
 
-const API_PREFIX = "/plugins/langfuse-observability";
+const API_PREFIX = "/plugins/a0_community_plugins__langfuse_observability";
 let observer = null;
 let logCache = null;
 let cachedContextId = null;
@@ -58,11 +58,11 @@ function scanAndInject(container) {
 }
 
 async function openTraceForArea(actionArea) {
-  const chatsStore = window.Alpine?.store("chats");
+  const chatsStore = globalThis.Alpine?.store("chats");
   const contextId = chatsStore?.selected;
   if (!contextId) return;
 
-  const traceViewer = window.Alpine?.store("traceViewer");
+  const traceViewer = globalThis.Alpine?.store("traceViewer");
   if (!traceViewer) return;
 
   // Fetch logs (cached per context)
@@ -75,7 +75,7 @@ async function openTraceForArea(actionArea) {
     traceViewer.loadTrace("", "");
     traceViewer.error = "No logs found for this chat";
     globalThis.openModal(
-      "/usr/plugins/langfuse-observability/webui/trace-viewer.html",
+      "/usr/plugins/a0_community_plugins__langfuse_observability/webui/trace-viewer.html",
     );
     return;
   }
@@ -86,7 +86,7 @@ async function openTraceForArea(actionArea) {
     traceViewer.loadTrace("", "");
     traceViewer.error = "No traces found (tracing may not be enabled)";
     globalThis.openModal(
-      "/usr/plugins/langfuse-observability/webui/trace-viewer.html",
+      "/usr/plugins/a0_community_plugins__langfuse_observability/webui/trace-viewer.html",
     );
     return;
   }
@@ -137,7 +137,7 @@ async function openTraceForArea(actionArea) {
 
   traceViewer.loadTrace(traceId, traceUrl);
   globalThis.openModal(
-    "/usr/plugins/langfuse-observability/webui/trace-viewer.html",
+    "/usr/plugins/a0_community_plugins__langfuse_observability/webui/trace-viewer.html",
   );
 }
 

@@ -38,10 +38,10 @@ def get_langfuse_config() -> dict[str, Any]:
     """Get Langfuse configuration with plugin config > env var > default precedence."""
     from helpers.plugins import get_plugin_config
 
-    config = get_plugin_config("langfuse-observability", None) or {}
+    config = get_plugin_config("a0_community_plugins__langfuse_observability", None) or {}
     public_key = config.get("langfuse_public_key") or os.getenv("LANGFUSE_PUBLIC_KEY", "")
     secret_key = config.get("langfuse_secret_key") or os.getenv("LANGFUSE_SECRET_KEY", "")
-    host = config.get("langfuse_host") or os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+    host = config.get("langfuse_host") or os.getenv("LANGFUSE_HOST", "https://us.cloud.langfuse.com")
     enabled = config.get("langfuse_enabled", False)
     sample_rate = float(config.get("langfuse_sample_rate", 1.0))
 

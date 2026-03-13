@@ -18,6 +18,8 @@
  * Store: $store.chats.contexts[] with .id, .name, .no
  */
 
+import { getStore } from "/js/AlpineStore.js";
+
 let observer = null;
 
 export function setup() {
@@ -35,7 +37,7 @@ export function setup() {
 }
 
 function injectNew(container) {
-  const chatsStore = window.Alpine?.store("chats");
+  const chatsStore = getStore("chats");
   if (!chatsStore?.contexts) return;
 
   const items = container.querySelectorAll("li");
@@ -67,7 +69,7 @@ function injectNew(container) {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
-      const forkStore = window.Alpine?.store("forkActions");
+      const forkStore = getStore("forkActions");
       if (forkStore) forkStore.forkChat(contextId);
     });
 

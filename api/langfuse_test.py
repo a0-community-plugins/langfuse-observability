@@ -18,11 +18,11 @@ class LangfuseTest(ApiHandler):
     async def process(self, input: dict, request: Request) -> dict | Response:
         public_key = input.get("public_key", "")
         secret_key = input.get("secret_key", "")
-        host = input.get("host", "https://cloud.langfuse.com")
+        host = input.get("host", "https://us.cloud.langfuse.com")
 
         # If frontend sent the masked placeholder, use the real stored key
         if secret_key == _SECRET_PLACEHOLDER:
-            config = get_plugin_config("langfuse-observability", None) or {}
+            config = get_plugin_config("a0_community_plugins__langfuse_observability", None) or {}
             secret_key = config.get("langfuse_secret_key", "")
 
         if not public_key or not secret_key:

@@ -1,7 +1,7 @@
 import { createStore, getStore } from "/js/AlpineStore.js";
 import { callJsonApi } from "/js/api.js";
 
-const API = "/plugins/langfuse-observability";
+const API = "/plugins/a0_community_plugins__langfuse_observability";
 
 const model = {
   forking: false,
@@ -49,7 +49,7 @@ const model = {
 
       return result.new_context_id;
     } catch (e) {
-      this.error = e.message || "Fork failed";
+      this.error = (e instanceof Error ? e.message : "Unknown error") || "Fork failed";
       return null;
     } finally {
       this.forking = false;
